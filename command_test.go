@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type CommandEndToEndTestsSuite struct {
+type CommandTests struct {
 	suite.Suite
 }
 
-func TestCommandEndToEnd(t *testing.T) {
-	suite.Run(t, &CommandEndToEndTestsSuite{})
+func TestCommand(t *testing.T) {
+	suite.Run(t, &CommandTests{})
 }
 
 // Test_Basic checks for basic expectations of a command concept
 // like invocation with arguments
-func (s CommandEndToEndTestsSuite) Test_Basic() {
+func (s CommandTests) Test_Basic() {
 	scriptPath := "tests/command/basic.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -47,7 +47,7 @@ func (s CommandEndToEndTestsSuite) Test_Basic() {
 	s.Contains(stderr, "this prints to stderr")
 }
 
-func (s CommandEndToEndTestsSuite) Test_Environment() {
+func (s CommandTests) Test_Environment() {
 	scriptPath := "tests/command/env.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -73,7 +73,7 @@ func (s CommandEndToEndTestsSuite) Test_Environment() {
 	s.Contains(output, fmt.Sprintf("$%s:%s", envKey2, envValue2))
 }
 
-func (s CommandEndToEndTestsSuite) Test_EnvironmentGlobal() {
+func (s CommandTests) Test_EnvironmentGlobal() {
 	scriptPath := "tests/command/env.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -93,7 +93,7 @@ func (s CommandEndToEndTestsSuite) Test_EnvironmentGlobal() {
 	s.True(ok)
 }
 
-func (s CommandEndToEndTestsSuite) Test_Pwd() {
+func (s CommandTests) Test_Pwd() {
 	scriptPath := "tests/command/pwd.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -114,7 +114,7 @@ func (s CommandEndToEndTestsSuite) Test_Pwd() {
 	s.Contains(output, fmt.Sprintf("$(pwd):%s", expectedResolvedDirectory))
 }
 
-func (s CommandEndToEndTestsSuite) Test_StdanyHook() {
+func (s CommandTests) Test_StdanyHook() {
 	scriptPath := "tests/command/stderr.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -142,7 +142,7 @@ func (s CommandEndToEndTestsSuite) Test_StdanyHook() {
 	s.Contains(output, expectedText)
 }
 
-func (s CommandEndToEndTestsSuite) Test_StderrHook() {
+func (s CommandTests) Test_StderrHook() {
 	scriptPath := "tests/command/stderr.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -170,7 +170,7 @@ func (s CommandEndToEndTestsSuite) Test_StderrHook() {
 	s.Contains(output, expectedText)
 }
 
-func (s CommandEndToEndTestsSuite) Test_StdoutHook() {
+func (s CommandTests) Test_StdoutHook() {
 	scriptPath := "tests/command/stdout.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -198,7 +198,7 @@ func (s CommandEndToEndTestsSuite) Test_StdoutHook() {
 	s.Contains(stdout, expectedText)
 }
 
-func (s CommandEndToEndTestsSuite) Test_command_String() {
+func (s CommandTests) Test_command_String() {
 	scriptPath := "tests/command/stdout.sh"
 	scriptPathInfo, err := os.Lstat(scriptPath)
 	s.Nil(err, "file should exist and be accessible")
@@ -211,4 +211,27 @@ func (s CommandEndToEndTestsSuite) Test_command_String() {
 	})
 	s.Nil(err)
 	s.Contains(command.String(), scriptPath+" \""+strings.Join(arguments, "\" \"")+"\"")
+}
+
+func (s CommandTests) Test_NewCommandOpts_Validate() {
+	opts := NewCommandOpts{}
+	err := opts.Validate()
+	s.Contains(err.Error(), ".Command")
+	opts.Command = "test"
+
+	opts.StdanyHooks = InputHooks{InputHook{}}
+	err = opts.Validate()
+	s.Contains(err.Error(), ".Flag.UseTTY")
+	opts.StdanyHooks = nil
+
+	opts.StderrHooks = InputHooks{InputHook{}}
+	err = opts.Validate()
+	s.Contains(err.Error(), ".Flag.UseTTY")
+	opts.StderrHooks = nil
+
+	opts.StdoutHooks = InputHooks{InputHook{}}
+	err = opts.Validate()
+	s.Contains(err.Error(), ".Flag.UseTTY")
+	opts.StdoutHooks = nil
+
 }

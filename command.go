@@ -96,9 +96,6 @@ func (nco NewCommandOpts) Validate() error {
 		errors = append(errors, "missing .Command")
 	}
 
-	// fmt.Println(nco.StdoutHooks != nil)
-	// fmt.Println(len(nco.StdoutHooks))
-	// fmt.Println(!nco.Flag.UseTTY)
 	if nco.StdoutHooks != nil && len(nco.StdoutHooks) > 0 && !nco.Flag.UseTTY {
 		errors = append(errors, ".Flag.UseTTY should be true if .StdoutHooks is defined")
 	}
