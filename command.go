@@ -180,9 +180,7 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	}
 	if opts.Flag.UseGlobalEnvironment {
 		globalEnvironment := os.Environ()
-		for _, globalEnvironmentKeyValue := range globalEnvironment {
-			environment = append(environment, globalEnvironmentKeyValue)
-		}
+		environment = append(environment, globalEnvironment...)
 	}
 	cmd.Env = environment
 
