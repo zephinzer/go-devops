@@ -2,6 +2,7 @@ package devops
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -95,6 +96,9 @@ func (nco NewCommandOpts) Validate() error {
 		errors = append(errors, "missing .Command")
 	}
 
+	// fmt.Println(nco.StdoutHooks != nil)
+	// fmt.Println(len(nco.StdoutHooks))
+	// fmt.Println(!nco.Flag.UseTTY)
 	if nco.StdoutHooks != nil && len(nco.StdoutHooks) > 0 && !nco.Flag.UseTTY {
 		errors = append(errors, ".Flag.UseTTY should be true if .StdoutHooks is defined")
 	}
@@ -117,11 +121,34 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to create Command: %s", err)
 	}
+	currentDirectory, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get working directory: %s", err)
+	}
+
 	cmd := exec.Cmd{}
 
 	invocation, err := exec.LookPath(opts.Command)
 	if err != nil {
+		if !path.IsAbs(invocation) {
+			invocation = path.Join(currentDirectory, invocation)
+			invocationInfo, err := os.Lstat(invocation)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					return nil, fmt.Errorf("failed to find a file system listing at %s", invocation)
+				}
+				return nil, fmt.Errorf("failed to access file at %s", invocation)
+			}
+			if invocationInfo.IsDir() {
+				return nil, fmt.Errorf("failed to find a file at %s", invocation)
+			}
+		}
 		return nil, fmt.Errorf("failed to find binary '%s' in $PATH: %s", opts.Command, err)
+	}
+	if strings.Contains(invocation, "/") {
+		if !path.IsAbs(invocation) {
+			invocation = path.Join(currentDirectory, invocation)
+		}
 	}
 	cmd.Path = invocation
 
@@ -130,10 +157,6 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	cmd.Args = arguments
 
 	var workingDir string
-	currentDirectory, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get working directory: %s", err)
-	}
 	if opts.WorkingDir != "" {
 		workingDir = opts.WorkingDir
 		if !path.IsAbs(workingDir) {
@@ -149,6 +172,7 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	} else {
 		workingDir = currentDirectory
 	}
+	cmd.Dir = workingDir
 
 	environment := []string{}
 	for key, value := range opts.Environment {
@@ -165,21 +189,29 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	var stdoutReader io.Reader
 	var stdoutWriter io.Writer
 	var stdoutOutput bytes.Buffer
-	stdoutReader, stdoutWriter = io.Pipe()
-	stdoutWriter = io.MultiWriter(stdoutWriter, &stdoutOutput)
-	if !opts.Flag.HideStdout {
+	if opts.Flag.HideStdout {
+		// this is basically untestsable without extensive instrumentation
+		// so it's not tested, but the behaviour should be obvious
+		stdoutReader, stdoutWriter = &bytes.Buffer{}, &bytes.Buffer{}
+	} else {
+		stdoutReader, stdoutWriter = io.Pipe()
 		stdoutWriter = io.MultiWriter(os.Stdout, stdoutWriter)
 	}
+	stdoutWriter = io.MultiWriter(stdoutWriter, &stdoutOutput)
 	cmd.Stdout = stdoutWriter
 
 	var stderrReader io.Reader
 	var stderrWriter io.Writer
 	var stderrOutput bytes.Buffer
-	stderrReader, stderrWriter = io.Pipe()
-	stderrWriter = io.MultiWriter(stderrWriter, &stderrOutput)
-	if !opts.Flag.HideStderr {
+	if opts.Flag.HideStderr {
+		// this is basically untestsable without extensive instrumentation
+		// so it's not tested, but the behaviour should be obvious
+		stderrReader, stderrWriter = &bytes.Buffer{}, &bytes.Buffer{}
+	} else {
+		stderrReader, stderrWriter = io.Pipe()
 		stderrWriter = io.MultiWriter(os.Stderr, stderrWriter)
 	}
+	stderrWriter = io.MultiWriter(stderrWriter, &stderrOutput)
 	cmd.Stderr = stderrWriter
 
 	stdoutHooks := opts.StdoutHooks
@@ -189,6 +221,8 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	var stdin io.WriteCloser = nil
 	if opts.Flag.UseTTY {
 		if len(stdoutHooks) == 0 && len(stderrHooks) == 0 && len(stdanyHooks) == 0 {
+			// another non-testable one, any ideas how to verify stdin on
+			// an actual terminal?
 			cmd.Stdin = os.Stdin
 		} else {
 			stdin, err = cmd.StdinPipe()
@@ -200,21 +234,24 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 
 	return &command{
 		Cmd:          cmd,
-		stdout:       stdoutReader,
-		stdoutHooks:  stdoutHooks,
-		stdoutOutput: &stdoutOutput,
+		stdanyHooks:  stdanyHooks,
 		stderr:       stderrReader,
 		stderrHooks:  stderrHooks,
 		stderrOutput: &stderrOutput,
-		stdanyHooks:  stdanyHooks,
 		stdin:        stdin,
+		stdout:       stdoutReader,
+		stdoutHooks:  stdoutHooks,
+		stdoutOutput: &stdoutOutput,
 	}, nil
 }
 
 type Command interface {
+	Bytes() []byte
+	GetEnvironment() map[string]string
+	GetStderr() []byte
+	GetStdout() []byte
 	Run() error
-	GetOutput() []byte
-	GetError() []byte
+	String() string
 }
 
 type command struct {
@@ -229,12 +266,32 @@ type command struct {
 	stdin        io.WriteCloser
 }
 
-func (c *command) GetError() []byte {
+func (c *command) Bytes() []byte {
+	var output bytes.Buffer
+	output.WriteString(c.Cmd.Path + " ")
+	for _, argument := range c.Cmd.Args[1:] {
+		output.WriteString("\"" + argument + "\" ")
+	}
+	return output.Bytes()
+}
+
+func (c *command) GetEnvironment() map[string]string {
+	envKeyValueMap := map[string]string{}
+	for _, envKeyValuePair := range c.Cmd.Env {
+		pair := strings.SplitN(envKeyValuePair, "=", 2)
+		if len(pair) == 2 {
+			envKeyValueMap[pair[0]] = pair[1]
+		}
+	}
+	return envKeyValueMap
+}
+
+func (c *command) GetStderr() []byte {
 	stderr, _ := ioutil.ReadAll(c.stderrOutput)
 	return stderr
 }
 
-func (c *command) GetOutput() []byte {
+func (c *command) GetStdout() []byte {
 	stdout, _ := ioutil.ReadAll(c.stdoutOutput)
 	return stdout
 }
@@ -258,6 +315,10 @@ func (c *command) Run() error {
 	return c.Cmd.Run()
 }
 
+func (c *command) String() string {
+	return string(c.Bytes())
+}
+
 func (c *command) hook(from io.Reader, onto InputHooks, writer io.WriteCloser) {
 	incoming := make([]byte, 64)
 	for {
@@ -270,7 +331,7 @@ func (c *command) hook(from io.Reader, onto InputHooks, writer io.WriteCloser) {
 				writer.Write(inputHook.Send)
 			}
 		}
-		if onto == nil {
+		if onto == nil || len(onto) == 0 {
 			continue
 		}
 		for _, inputHook := range onto {

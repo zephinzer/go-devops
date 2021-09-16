@@ -12,3 +12,6 @@ echo "\$6: $6";
 echo "\$7: $7";
 echo "\$8: $8";
 echo "\$9: $9";
+
+echo "this prints to stdout";
+>&2 echo "this prints to stderr";
