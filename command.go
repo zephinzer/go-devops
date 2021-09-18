@@ -114,6 +114,7 @@ func (nco NewCommandOpts) Validate() error {
 	return nil
 }
 
+// NewCommand initialises a new Command interface and returns it
 func NewCommand(opts NewCommandOpts) (Command, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to create Command: %s", err)
@@ -240,15 +241,37 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	}, nil
 }
 
+// Command interface defines a command object's methods
 type Command interface {
+	// Bytes returns the full terminal invocation represented
+	// by this instance of a Command as a slice of bytes
 	Bytes() []byte
+
+	// GetEnvironment returns a key-value dictionary of
+	// environment variables to be injected into the process
+	// created via the invocation this Command represents
 	GetEnvironment() map[string]string
+
+	// GetStderr returns the output to the stderr stream
+	// (only available after the Command has completed its
+	// execution)
 	GetStderr() []byte
+
+	// GetStdout returns the output to the stdout stream
+	// (only available after the Command has completed its
+	// execution)
 	GetStdout() []byte
+
+	// Run triggers the invocation represented by this
+	// Command instance
 	Run() error
+
+	// String returns the full terminal invocation represented
+	// by this instance of a Command as a string
 	String() string
 }
 
+// command object used internally
 type command struct {
 	exec.Cmd
 	stdout       io.Reader
