@@ -13,6 +13,7 @@ This repository exports a package `devops` that simplifies writing of Go applica
 - [Security](#security)
   - [SSH Keys](#ssh-keys)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
+- [Changelog](#changelog)
 - [License](#license)
 
 # Why you might want to use this
@@ -115,6 +116,12 @@ func main() {
 To run this on a private key, set the `IsPublicKey` to `false` (or leave it unset) and set `IsPrivateKey` property to true.
 
 To specify a password, set the `Passphrase` property of the `GetSshKeyFingerprintOpts` instance.
+
+# Changelog
+
+| Version  | Changes                                              |
+| -------- | ---------------------------------------------------- |
+| `v0.0.3` | Added SSH fingerprinting API. Also started changelog |
 
 # License
 
