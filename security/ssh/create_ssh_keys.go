@@ -1,5 +1,0 @@
-package security
-
-func CreateSshKeys() {
-
-}
