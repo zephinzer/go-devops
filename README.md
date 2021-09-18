@@ -121,6 +121,7 @@ To specify a password, set the `Passphrase` property of the `GetSshKeyFingerprin
 
 | Version  | Changes                                              |
 | -------- | ---------------------------------------------------- |
+| `v0.0.4` | Added inline code comments for documentation         |
 | `v0.0.3` | Added SSH fingerprinting API. Also started changelog |
 
 # License
