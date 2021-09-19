@@ -143,11 +143,11 @@ func main() {
 
 # Changelog
 
-| Version  | Changes                                              |
-| -------- | ---------------------------------------------------- |
-| `v0.0.5` | Added user interactions API                          |
-| `v0.0.4` | Added inline code comments for documentation         |
-| `v0.0.3` | Added SSH fingerprinting API. Also started changelog |
+| Version  | Changes                                               |
+| -------- | ----------------------------------------------------- |
+| `v0.0.5` | Added `.Confirm`                                      |
+| `v0.0.4` | Added inline code comments for documentation          |
+| `v0.0.3` | Added `.GetSshKeyFingerprint`. Also started changelog |
 
 # License
 
