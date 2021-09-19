@@ -3,6 +3,7 @@ package devops
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -34,16 +35,56 @@ func (o sshKeyFingerprint) GetMD5() string {
 // GetSshKeyFingerprintOpts provides the configuration values
 // for identifying the key whose fingerprint we want
 type GetSshKeyFingerprintOpts struct {
+	// IsPrivateKey if set to true indicates that we are
+	// targetting a private key. If both this and .IsPublicKey
+	// are not set, .IsPublicKey will be set to true
 	IsPrivateKey bool
-	IsPublicKey  bool
-	Passphrase   string
-	Path         string
+
+	// IsPublicKey if set to true indicates that we are
+	// targetting a public key. If both this and .IsPrivateKey
+	// are not set, .IsPublicKey will be set to true
+	IsPublicKey bool
+
+	// Passphrase defines a passphrase for the private key if
+	// applicable
+	Passphrase string
+
+	// Path defines the file directory path to the key file
+	// of interest
+	Path string
+}
+
+func (o *GetSshKeyFingerprintOpts) SetDefaults() {
+	if !o.IsPrivateKey && !o.IsPublicKey {
+		o.IsPublicKey = true
+	}
+}
+
+func (o GetSshKeyFingerprintOpts) Validate() error {
+	errors := []string{}
+
+	if o.Path == "" {
+		errors = append(errors, "missing path to key")
+	}
+
+	if o.IsPrivateKey && o.IsPublicKey {
+		errors = append(errors, "cannot be both public and private key")
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("failed to validate options: ['%s']", strings.Join(errors, "', '"))
+	}
+	return nil
 }
 
 // GetSshKeyFingerprint returns the fingerprints for the
 // provided key as specified in the GetSshKeyFingerprintOpts
 // parameter
 func GetSshKeyFingerprint(opts GetSshKeyFingerprintOpts) (SshKeyFingerprint, error) {
+	opts.SetDefaults()
+	if err := opts.Validate(); err != nil {
+		return nil, fmt.Errorf("failed to get ssh fingerprint: %s", err)
+	}
 	keyPath := opts.Path
 	keyContent, err := ioutil.ReadFile(keyPath)
 	if err != nil {
@@ -53,19 +94,16 @@ func GetSshKeyFingerprint(opts GetSshKeyFingerprintOpts) (SshKeyFingerprint, err
 	var publicKey ssh.PublicKey
 	if opts.IsPrivateKey {
 		privateKey, err := ssh.ParsePrivateKey(keyContent)
-		if err != nil {
-			if _, ok := err.(*ssh.PassphraseMissingError); ok {
-				if opts.Passphrase == "" {
-					return nil, fmt.Errorf("failed to provide a required passphrase")
-				} else {
-					privateKey, err = ssh.ParsePrivateKeyWithPassphrase(keyContent, []byte(opts.Passphrase))
-					if err != nil {
-						return nil, fmt.Errorf("failed to parse private key using provided passphrase: %s", err)
-					}
-				}
-			} else {
-				return nil, fmt.Errorf("failed to parse private key: %s", err)
+		if _, ok := err.(*ssh.PassphraseMissingError); ok {
+			if opts.Passphrase == "" {
+				return nil, fmt.Errorf("failed to provide a required passphrase")
 			}
+			privateKey, err = ssh.ParsePrivateKeyWithPassphrase(keyContent, []byte(opts.Passphrase))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse private key using provided passphrase: %s", err)
+			}
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %s", err)
 		}
 		publicKey = privateKey.PublicKey()
 	} else if opts.IsPublicKey {

@@ -20,7 +20,13 @@ type InputHooks []InputHook
 // of `.On` using the byte sequence .Send. Receiver and signaller is
 // left to the controller to implement
 type InputHook struct {
-	On   []byte
+	// On defines a byte matcher that when matched, should trigger a
+	// write to the input stream using the byte sequence defined in
+	// .Send
+	On []byte
+
+	// Send defines a sequence of bytes to send to the input when .On
+	// is detected
 	Send []byte
 }
 
@@ -29,11 +35,14 @@ type InputHook struct {
 type CommandFlagset struct {
 	// HideStdout indicates whether STDOUT should be printed to the terminal
 	HideStdout bool
+
 	// HideStderr indicates whether STDERR should be printed to the terminal
 	HideStderr bool
+
 	// UseGlobalEnvironment indicates whether the child process should
 	// inherit the parent's environment
 	UseGlobalEnvironment bool
+
 	// UseTTY enables use of STDIN
 	UseTTY bool
 }

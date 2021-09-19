@@ -5,14 +5,15 @@ This repository exports a package `devops` that simplifies writing of Go applica
 - [go-devops](#go-devops)
 - [Why you might want to use this](#why-you-might-want-to-use-this)
 - [Design principles](#design-principles)
-- [Example usage](#example-usage)
+- [Usage and Examples](#usage-and-examples)
   - [Commands](#commands)
     - [Listing a directory contents](#listing-a-directory-contents)
     - [Pulling `go` dependencies](#pulling-go-dependencies)
     - [Pulling `node` dependencies](#pulling-node-dependencies)
-- [Security](#security)
-  - [SSH Keys](#ssh-keys)
+  - [Security](#security)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
+  - [User interactions](#user-interactions)
+    - [Confirmation dialog](#confirmation-dialog)
 - [Changelog](#changelog)
 - [License](#license)
 
@@ -27,13 +28,13 @@ This repository exports a package `devops` that simplifies writing of Go applica
 2. All `New[.]*` functions will perform a sanity check on provided options and return an `error` if checks are not successful. While this could be annoying, this encourages lazy-instantiation so that assigned properties do not become stale
 3. Rather than just providing methods to run a function, which would easily solve problems addressed above, we require a constructor for most objects via a method named `New[.]*` to allow for passing the instance to another controller, which means with this separation you can also separate your data access/creation and controller code by passing an instance to a controller for processing
 
-# Example usage
+# Usage and Examples
 
 ## Commands
 
 ### Listing a directory contents
 
-> A working example is available at [`./cmd/ls`](./cmd/ls)
+> A working example is available at [`./cmd/command`](./cmd/command)
 
 The following runs `ls -al`:
 
@@ -87,9 +88,7 @@ func main() {
 }
 ```
 
-# Security
-
-## SSH Keys
+## Security
 
 ### Retrieving the SSH key fingerprint
 
@@ -117,10 +116,36 @@ To run this on a private key, set the `IsPublicKey` to `false` (or leave it unse
 
 To specify a password, set the `Passphrase` property of the `GetSshKeyFingerprintOpts` instance.
 
+## User interactions
+
+### Confirmation dialog
+
+To trigger a confirmation dialog in the terminal with the user, use the `.Confirm` method.
+
+> A working example is available at [`./cmd/confirm`](./cmd/confirm)
+
+```go
+import "gitlab.com/zephinzer/go-devops"
+
+// ...
+
+func main() {
+  yes, err := devops.Confirm(devops.ConfirmOpts{
+		Question:   "exact match",
+		MatchExact: "yes",
+	})
+	if err != nil {
+		log.Fatalf("failed to get user input: %s", err)
+	}
+	log.Printf("user confirmed: %v\n", yes)
+}
+```
+
 # Changelog
 
 | Version  | Changes                                              |
 | -------- | ---------------------------------------------------- |
+| `v0.0.5` | Added user interactions API                          |
 | `v0.0.4` | Added inline code comments for documentation         |
 | `v0.0.3` | Added SSH fingerprinting API. Also started changelog |
 
