@@ -99,9 +99,9 @@ import "gitlab.com/zephinzer/go-devops"
 
 func main() {
   keyPath := "./tests/sshkeys/id_rsa_1024.pub"
-	fingerprint, err := GetSshKeyFingerprint(GetSshKeyFingerprintOpts{
-		IsPublicKey: true,
-		Path:        keyPath,
+  fingerprint, err := GetSshKeyFingerprint(GetSshKeyFingerprintOpts{
+    IsPublicKey: true,
+    Path:        keyPath,
   })
 
   fmt.Printf("md5 hash   : %s\n", fingerprint.GetMD5())
@@ -131,13 +131,13 @@ import "gitlab.com/zephinzer/go-devops"
 
 func main() {
   yes, err := devops.Confirm(devops.ConfirmOpts{
-		Question:   "exact match",
-		MatchExact: "yes",
-	})
-	if err != nil {
-		log.Fatalf("failed to get user input: %s", err)
-	}
-	log.Printf("user confirmed: %v\n", yes)
+    Question:   "exact match",
+    MatchExact: "yes",
+  })
+  if err != nil {
+    log.Fatalf("failed to get user input: %s", err)
+  }
+  log.Printf("user confirmed: %v\n", yes)
 }
 ```
 
