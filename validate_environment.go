@@ -10,12 +10,15 @@ import (
 type EnvType string
 
 const (
-	TypeAny    EnvType = "any"
-	TypeString EnvType = "string"
-	TypeInt    EnvType = "int"
-	TypeUint   EnvType = "uint"
-	TypeFloat  EnvType = "float"
-	TypeBool   EnvType = "bool"
+	TypeAny          EnvType = "any"
+	TypeNil          EnvType = "nil"
+	TypeString       EnvType = "string"
+	TypeInt          EnvType = "int"
+	TypeUint         EnvType = "uint"
+	TypeFloat        EnvType = "float"
+	TypeBool         EnvType = "bool"
+	TypeErrorMissing EnvType = "__missing"
+	TypeErrorUnknown EnvType = "__unknown"
 )
 
 type EnvironmentKey struct {
@@ -37,8 +40,40 @@ func (o *ValidateEnvironmentOpts) SetDefaults() {
 	}
 }
 
-func ValidateEnvironment(opts ValidateEnvironmentOpts) error {
+type ValidateEnvironmentError struct {
+	Key          string
+	ExpectedType EnvType
+	Value        string
+}
+
+type ValidateEnvironmentErrors struct {
+	Errors []ValidateEnvironmentError
+}
+
+func (e ValidateEnvironmentErrors) Len() int {
+	return len(e.Errors)
+}
+
+func (e *ValidateEnvironmentErrors) Push(err ValidateEnvironmentError) {
+	e.Errors = append(e.Errors, err)
+}
+
+func (e ValidateEnvironmentErrors) Error() string {
 	errors := []string{}
+	for _, err := range e.Errors {
+		if err.ExpectedType == TypeErrorUnknown {
+			errors = append(errors, fmt.Sprintf("key[%s] has unknown type '%s'", err.Key, err.Value))
+		} else if err.ExpectedType == TypeErrorMissing {
+			errors = append(errors, fmt.Sprintf("key[%s] does not exist", err.Key))
+		} else {
+			errors = append(errors, fmt.Sprintf("key[%s]:%s was '%s'", err.Key, err.ExpectedType, err.Value))
+		}
+	}
+	return fmt.Sprintf("failed to validate environment: ['%s']", strings.Join(errors, "', '"))
+}
+
+func ValidateEnvironment(opts ValidateEnvironmentOpts) error {
+	errors := ValidateEnvironmentErrors{}
 
 	opts.SetDefaults()
 	expectedKeyMap := map[string]EnvType{}
@@ -64,38 +99,38 @@ func ValidateEnvironment(opts ValidateEnvironmentOpts) error {
 			case TypeString:
 				fmt.Println("------------------")
 				if value == nil {
-					errors = append(errors, fmt.Sprintf("key[%s]:string was nil", expectedKey))
+					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: "nil"})
 				} else if val := value.(string); val == "" {
-					errors = append(errors, fmt.Sprintf("key[%s]:string was empty", expectedKey))
+					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: "empty"})
 				}
 				fmt.Println(value)
 			case TypeInt:
 				if _, err := strconv.Atoi(value.(string)); err != nil {
-					errors = append(errors, fmt.Sprintf("key[%s]:integer was '%s'", expectedKey, value.(string)))
+					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: value.(string)})
 				}
 			case TypeUint:
 				if _, err := strconv.ParseUint(value.(string), 10, 0); err != nil {
-					errors = append(errors, fmt.Sprintf("key[%s]:uint was '%s'", expectedKey, value.(string)))
+					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: value.(string)})
 				}
 			case TypeFloat:
 				if _, err := strconv.ParseFloat(value.(string), 0); err != nil {
-					errors = append(errors, fmt.Sprintf("key[%s]:float was '%s'", expectedKey, value.(string)))
+					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: value.(string)})
 				}
 			case TypeBool:
 				if _, err := strconv.ParseBool(value.(string)); err != nil {
-					errors = append(errors, fmt.Sprintf("key[%s]:bool was '%s'", expectedKey, value.(string)))
+					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: value.(string)})
 				}
 			default:
-				errors = append(errors, fmt.Sprintf("key[%s] has unknown type '%s'", expectedKey, expectedType))
+				errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: TypeErrorUnknown, Value: string(expectedType)})
 			}
 		} else {
-			errors = append(errors, fmt.Sprintf("key[%s] does not exist", expectedKey))
+			errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: TypeErrorMissing})
 			continue
 		}
 	}
 
-	if len(errors) > 0 {
-		return fmt.Errorf("failed to validate environment: ['%s']", strings.Join(errors, "', '"))
+	if errors.Len() > 0 {
+		return errors
 	}
 
 	return nil

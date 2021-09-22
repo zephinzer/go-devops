@@ -111,3 +111,31 @@ func (s ValidateEnvironmentTests) TestValidateEnvironment_typesSad() {
 	s.Contains(err.Error(), "key[FLOAT]")
 	s.Contains(err.Error(), "key[BOOL]")
 }
+
+func (s ValidateEnvironmentTests) TestValidateEnvironment_parseError() {
+	os.Setenv(s.IntKey, "not an int")
+	os.Setenv(s.UintKey, "-123")
+	os.Setenv(s.FloatKey, "not a float")
+	os.Setenv(s.BoolKey, "maybe")
+	err := ValidateEnvironment(ValidateEnvironmentOpts{
+		Keys: EnvironmentKeys{
+			{Name: s.StringKey, Type: TypeString},
+			{Name: s.IntKey, Type: TypeInt},
+			{Name: s.UintKey, Type: TypeUint},
+			{Name: s.FloatKey, Type: TypeFloat},
+			{Name: s.BoolKey, Type: TypeBool},
+		},
+	})
+	s.NotNil(err)
+	errs, ok := err.(ValidateEnvironmentErrors)
+	s.True(ok)
+	errorKeys := []string{}
+	for _, errInstance := range errs.Errors {
+		errorKeys = append(errorKeys, errInstance.Key)
+	}
+	s.Contains(errorKeys, s.StringKey)
+	s.Contains(errorKeys, s.IntKey)
+	s.Contains(errorKeys, s.UintKey)
+	s.Contains(errorKeys, s.FloatKey)
+	s.Contains(errorKeys, s.BoolKey)
+}

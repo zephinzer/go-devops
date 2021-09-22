@@ -114,6 +114,34 @@ func main() {
 
 If the `Type` property is not set, it defaults to `TypeAny`
 
+For custom parsing of error, you can do a type assertion on the `error` interface to `ValidateEnvironmentErrors` and retrieve the error keys/types using the `.Errors` property:
+
+```go
+func main() {
+  err := ValidateEnvironment(ValidateEnvironmentOpts{
+    Keys: EnvironmentKeys{
+			{Name: "STRING", Type: TypeString},
+			{Name: "INT", Type: TypeInt},
+			{Name: "UINT", Type: TypeUint},
+			{Name: "FLOAT", Type: TypeFloat},
+			{Name: "BOOL", Type: TypeBool},
+			{Name: "ANY", Type: TypeAny},
+    },
+  })
+  if err != nil {
+    errs, _ := err.(ValidateEnvironmentErrors)
+    for _, errInstance := range errs.Errors {
+      fmt.Printf(
+        "key[%s] errored (expected type: %s, observed value: %s)",
+        errInstance.Key,
+        errInstance.ExpectedType,
+        errInstance.Value,
+      )
+    }
+  }
+}
+```
+
 ## Security
 
 ### Retrieving the SSH key fingerprint
@@ -163,6 +191,7 @@ func main() {
 
 | Version  | Changes                                               |
 | -------- | ----------------------------------------------------- |
+| `v0.0.7` | Added custom error parsing for `.ValidateEnvironment` |
 | `v0.0.6` | Added `.ValidateEnvironment`                          |
 | `v0.0.5` | Added `.Confirm`                                      |
 | `v0.0.4` | Added inline code comments for documentation          |
