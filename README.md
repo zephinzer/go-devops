@@ -10,6 +10,8 @@ This repository exports a package `devops` that simplifies writing of Go applica
     - [Listing a directory contents](#listing-a-directory-contents)
     - [Pulling `go` dependencies](#pulling-go-dependencies)
     - [Pulling `node` dependencies](#pulling-node-dependencies)
+  - [Input validation](#input-validation)
+    - [Validating the environment](#validating-the-environment)
   - [Security](#security)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
   - [User interactions](#user-interactions)
@@ -30,6 +32,14 @@ This repository exports a package `devops` that simplifies writing of Go applica
 
 # Usage and Examples
 
+All examples assume the importing of this package using:
+
+```go
+// ...
+import "gitlab.com/zephinzer/go-devops"
+// ...
+```
+
 ## Commands
 
 ### Listing a directory contents
@@ -39,10 +49,6 @@ This repository exports a package `devops` that simplifies writing of Go applica
 The following runs `ls -al`:
 
 ```go
-import "gitlab.com/zephinzer/go-devops"
-
-// ...
-
 func main() {
   ls, _ := devops.NewCommand(devops.NewCommandOpts{
     Command: "ls",
@@ -57,10 +63,6 @@ func main() {
 The following runs `go mod vendor`:
 
 ```go
-import "gitlab.com/zephinzer/go-devops"
-
-// ...
-
 func main() {
   installGoDeps, _ := devops.NewCommand(devops.NewCommandOpts{
     Command: "go",
@@ -75,10 +77,6 @@ func main() {
 The following runs `npm install`:
 
 ```go
-import "gitlab.com/zephinzer/go-devops"
-
-// ...
-
 func main() {
   installNodeDeps, _ := devops.NewCommand(devops.NewCommandOpts{
     Command: "npm",
@@ -88,15 +86,39 @@ func main() {
 }
 ```
 
+## Input validation
+
+### Validating the environment
+
+The `.ValidateEnvironment` can be used to validate that certain keys of interest are defined in the enviornment and returns an error if it doesn't.
+
+A full example follows:
+
+```go
+func main() {
+	err := ValidateEnvironment(ValidateEnvironmentOpts{
+		Keys: EnvironmentKeys{
+			{Name: "STRING", Type: TypeString},
+			{Name: "INT", Type: TypeInt},
+			{Name: "UINT", Type: TypeUint},
+			{Name: "FLOAT", Type: TypeFloat},
+			{Name: "BOOL", Type: TypeBool},
+			{Name: "ANY", Type: TypeAny},
+		},
+	})
+  if err != nil {
+    panic(err)
+  }
+}
+```
+
+If the `Type` property is not set, it defaults to `TypeAny`
+
 ## Security
 
 ### Retrieving the SSH key fingerprint
 
 ```go
-import "gitlab.com/zephinzer/go-devops"
-
-// ...
-
 func main() {
   keyPath := "./tests/sshkeys/id_rsa_1024.pub"
   fingerprint, err := GetSshKeyFingerprint(GetSshKeyFingerprintOpts{
@@ -125,10 +147,6 @@ To trigger a confirmation dialog in the terminal with the user, use the `.Confir
 > A working example is available at [`./cmd/confirm`](./cmd/confirm)
 
 ```go
-import "gitlab.com/zephinzer/go-devops"
-
-// ...
-
 func main() {
   yes, err := devops.Confirm(devops.ConfirmOpts{
     Question:   "exact match",
@@ -145,6 +163,7 @@ func main() {
 
 | Version  | Changes                                               |
 | -------- | ----------------------------------------------------- |
+| `v0.0.6` | Added `.ValidateEnvironment`                          |
 | `v0.0.5` | Added `.Confirm`                                      |
 | `v0.0.4` | Added inline code comments for documentation          |
 | `v0.0.3` | Added `.GetSshKeyFingerprint`. Also started changelog |
