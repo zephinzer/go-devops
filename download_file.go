@@ -96,10 +96,10 @@ func DownloadFile(opts DownloadFileOpts) error {
 		req.Header = opts.Headers
 	}
 	res, err := opts.Client.Do(&req)
-	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("failed to start download from '%s': %s", opts.URL.String(), err)
 	}
+	defer res.Body.Close()
 	_, err = io.Copy(fileHandle, res.Body)
 	if err != nil {
 		return fmt.Errorf("failed to write to file at '%s': %s", fileDestination, err)
