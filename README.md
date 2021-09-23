@@ -10,6 +10,8 @@ This repository exports a package `devops` that simplifies writing of Go applica
     - [Listing a directory contents](#listing-a-directory-contents)
     - [Pulling `go` dependencies](#pulling-go-dependencies)
     - [Pulling `node` dependencies](#pulling-node-dependencies)
+  - [External data retrieval](#external-data-retrieval)
+    - [Download files](#download-files)
   - [Input validation](#input-validation)
     - [Validating the environment](#validating-the-environment)
   - [Security](#security)
@@ -86,6 +88,27 @@ func main() {
 }
 ```
 
+## External data retrieval
+
+### Download files
+
+The following downloads the source code from Google:
+
+```go
+func main() {
+	targetURL, err := url.Parse("https://google.com")
+  if err != nil {
+    panic(err)
+  }
+	if err = devops.DownloadFile(DownloadFileOpts{
+		DestinationPath: "./google.com.src.txt",
+		URL:             targetURL,
+	}); err != nil {
+    panic(err)
+  }
+}
+```
+
 ## Input validation
 
 ### Validating the environment
@@ -118,7 +141,7 @@ For custom parsing of error, you can do a type assertion on the `error` interfac
 
 ```go
 func main() {
-  err := ValidateEnvironment(ValidateEnvironmentOpts{
+  err := devops.ValidateEnvironment(ValidateEnvironmentOpts{
     Keys: EnvironmentKeys{
 			{Name: "STRING", Type: TypeString},
 			{Name: "INT", Type: TypeInt},
@@ -129,7 +152,7 @@ func main() {
     },
   })
   if err != nil {
-    errs, _ := err.(ValidateEnvironmentErrors)
+    errs, _ := err.(devops.ValidateEnvironmentErrors)
     for _, errInstance := range errs.Errors {
       fmt.Printf(
         "key[%s] errored (expected type: %s, observed value: %s)",
@@ -149,7 +172,7 @@ func main() {
 ```go
 func main() {
   keyPath := "./tests/sshkeys/id_rsa_1024.pub"
-  fingerprint, err := GetSshKeyFingerprint(GetSshKeyFingerprintOpts{
+  fingerprint, err := devops.GetSshKeyFingerprint(devops.GetSshKeyFingerprintOpts{
     IsPublicKey: true,
     Path:        keyPath,
   })
@@ -191,6 +214,7 @@ func main() {
 
 | Version  | Changes                                               |
 | -------- | ----------------------------------------------------- |
+| `v0.0.8` | Added `.DownloadFile`                                 |
 | `v0.0.7` | Added custom error parsing for `.ValidateEnvironment` |
 | `v0.0.6` | Added `.ValidateEnvironment`                          |
 | `v0.0.5` | Added `.Confirm`                                      |
