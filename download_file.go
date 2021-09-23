@@ -42,7 +42,9 @@ func (o DownloadFileOpts) Validate() error {
 		errors = append(errors, "missing destination file path")
 	}
 
-	if o.URL.Host == "" {
+	if o.URL == nil {
+		errors = append(errors, "missing url")
+	} else if o.URL.Host == "" {
 		errors = append(errors, "missing host")
 	}
 
@@ -79,12 +81,6 @@ func DownloadFile(opts DownloadFileOpts) error {
 		}
 	}
 
-	fileHandle, err := os.OpenFile(fileDestination, os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to open file at '%s': %s", fileDestination, err)
-	}
-	defer fileHandle.Close()
-
 	if opts.BasicAuth != nil {
 		opts.URL.User = url.UserPassword(opts.BasicAuth.Username, opts.BasicAuth.Password)
 	}
@@ -100,6 +96,12 @@ func DownloadFile(opts DownloadFileOpts) error {
 		return fmt.Errorf("failed to start download from '%s': %s", opts.URL.String(), err)
 	}
 	defer res.Body.Close()
+
+	fileHandle, err := os.OpenFile(fileDestination, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to open file at '%s': %s", fileDestination, err)
+	}
+	defer fileHandle.Close()
 	_, err = io.Copy(fileHandle, res.Body)
 	if err != nil {
 		return fmt.Errorf("failed to write to file at '%s': %s", fileDestination, err)
