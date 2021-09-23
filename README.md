@@ -13,6 +13,7 @@ This repository exports a package `devops` that simplifies writing of Go applica
   - [External data retrieval](#external-data-retrieval)
     - [Download files](#download-files)
   - [Input validation](#input-validation)
+    - [Validating applications](#validating-applications)
     - [Validating the environment](#validating-the-environment)
   - [Security](#security)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
@@ -110,6 +111,25 @@ func main() {
 ```
 
 ## Input validation
+
+### Validating applications
+
+The `.ValidateApplications` function can be used to validate that paths provided are executable or in the system's `$PATH` variable.
+
+A full example follows:
+
+```go
+func main() {
+	err = devops.ValidateApplications(ValidateApplicationsOpts{
+		Paths: []string{"thisappdoesnotexist"},
+	})
+  if err != nil {
+    if _, ok := err.(devops.ValidateApplicationsErrors); ok {
+      panic(fmt.Sprintf("failed to find applications: ['%s']", strings.Join(err.Errors, "', '")))
+    }
+  }
+}
+```
 
 ### Validating the environment
 
@@ -214,6 +234,7 @@ func main() {
 
 | Version  | Changes                                               |
 | -------- | ----------------------------------------------------- |
+| `v0.0.9` | Added `.ValidateApplications`                         |
 | `v0.0.8` | Added `.DownloadFile`                                 |
 | `v0.0.7` | Added custom error parsing for `.ValidateEnvironment` |
 | `v0.0.6` | Added `.ValidateEnvironment`                          |
