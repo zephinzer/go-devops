@@ -14,6 +14,7 @@ This repository exports a package `devops` that simplifies writing of Go applica
     - [Download files](#download-files)
   - [Input validation](#input-validation)
     - [Validating applications](#validating-applications)
+    - [Validating connections](#validating-connections)
     - [Validating the environment](#validating-the-environment)
   - [Security](#security)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
@@ -120,13 +121,31 @@ A full example follows:
 
 ```go
 func main() {
-	err = devops.ValidateApplications(ValidateApplicationsOpts{
+	err := devops.ValidateApplications(ValidateApplicationsOpts{
 		Paths: []string{"thisappdoesnotexist"},
 	})
   if err != nil {
     if _, ok := err.(devops.ValidateApplicationsErrors); ok {
       panic(fmt.Sprintf("failed to find applications: ['%s']", strings.Join(err.Errors, "', '")))
     }
+  }
+}
+```
+
+### Validating connections
+
+The `.ValidateConnection` function can be used to validate that a provided hostname and port is reachable and listening for requests.
+
+A full example follows:
+
+```go
+func main() {
+  err := devops.ValidateConnection(ValidateConnectionOpts{
+    Hostname: "google.com",
+    Port: 80,
+  })
+  if err != nil {
+    panic(err)
   }
 }
 ```
@@ -232,15 +251,16 @@ func main() {
 
 # Changelog
 
-| Version  | Changes                                               |
-| -------- | ----------------------------------------------------- |
-| `v0.0.9` | Added `.ValidateApplications`                         |
-| `v0.0.8` | Added `.DownloadFile`                                 |
-| `v0.0.7` | Added custom error parsing for `.ValidateEnvironment` |
-| `v0.0.6` | Added `.ValidateEnvironment`                          |
-| `v0.0.5` | Added `.Confirm`                                      |
-| `v0.0.4` | Added inline code comments for documentation          |
-| `v0.0.3` | Added `.GetSshKeyFingerprint`. Also started changelog |
+| Version   | Changes                                               |
+| --------- | ----------------------------------------------------- |
+| `v0.0.10` | Added `.ValidateConnection`                           |
+| `v0.0.9`  | Added `.ValidateApplications`                         |
+| `v0.0.8`  | Added `.DownloadFile`                                 |
+| `v0.0.7`  | Added custom error parsing for `.ValidateEnvironment` |
+| `v0.0.6`  | Added `.ValidateEnvironment`                          |
+| `v0.0.5`  | Added `.Confirm`                                      |
+| `v0.0.4`  | Added inline code comments for documentation          |
+| `v0.0.3`  | Added `.GetSshKeyFingerprint`. Also started changelog |
 
 # License
 
