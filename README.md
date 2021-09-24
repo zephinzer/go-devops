@@ -253,6 +253,7 @@ func main() {
 
 | Version   | Changes                                               |
 | --------- | ----------------------------------------------------- |
+| `v0.0.11` | Renamed module for being able to import it via its Gitlab URL  |
 | `v0.0.10` | Added `.ValidateConnection`                           |
 | `v0.0.9`  | Added `.ValidateApplications`                         |
 | `v0.0.8`  | Added `.DownloadFile`                                 |
