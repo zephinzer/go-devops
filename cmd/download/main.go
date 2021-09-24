@@ -1,10 +1,11 @@
 package main
 
 import (
-	"devops"
 	"fmt"
 	"net/url"
 	"time"
+
+	"gitlab.com/zephinzer/go-devops"
 )
 
 func main() {

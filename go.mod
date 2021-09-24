@@ -1,4 +1,4 @@
-module devops
+module gitlab.com/zephinzer/go-devops
 
 go 1.17
 

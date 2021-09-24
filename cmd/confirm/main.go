@@ -1,9 +1,10 @@
 package main
 
 import (
-	"devops"
 	"log"
 	"regexp"
+
+	"gitlab.com/zephinzer/go-devops"
 )
 
 func main() {

@@ -1,6 +1,6 @@
 package main
 
-import "devops"
+import "gitlab.com/zephinzer/go-devops"
 
 func main() {
 	ls, _ := devops.NewCommand(devops.NewCommandOpts{
