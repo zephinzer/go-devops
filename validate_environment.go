@@ -102,7 +102,6 @@ func ValidateEnvironment(opts ValidateEnvironmentOpts) error {
 				} else if val := value.(string); val == "" {
 					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: "empty"})
 				}
-				fmt.Println(value)
 			case TypeInt:
 				if _, err := strconv.Atoi(value.(string)); err != nil {
 					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: value.(string)})
