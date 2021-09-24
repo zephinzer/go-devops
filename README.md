@@ -303,6 +303,7 @@ func main() {
 
 | Version   | Changes                                               |
 | --------- | ----------------------------------------------------- |
+| `v0.0.13` | Formatting fixes  |
 | `v0.0.12` | Added `.LoadEnvironment`  |
 | `v0.0.11` | Renamed module for being able to import it via its Gitlab URL  |
 | `v0.0.10` | Added `.ValidateConnection`                           |

@@ -97,7 +97,6 @@ func ValidateEnvironment(opts ValidateEnvironmentOpts) error {
 			switch expectedType {
 			case TypeAny:
 			case TypeString:
-				fmt.Println("------------------")
 				if value == nil {
 					errors.Push(ValidateEnvironmentError{Key: expectedKey, ExpectedType: expectedType, Value: "nil"})
 				} else if val := value.(string); val == "" {
