@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/stretchr/testify v1.7.0
+	github.com/zephinzer/go-strcase v1.0.1
 	golang.org/x/crypto v0.0.0-20210915214749-c084706c2272
 )
 
