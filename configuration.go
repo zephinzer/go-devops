@@ -14,15 +14,24 @@ func newConfiguration(from interface{}) configuration {
 		configType = configType.Elem()
 	}
 	configFields := []configurationField{}
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
-		configField := configurationField{
-			Name:  field.Name,
-			Tag:   field.Tag,
-			Type:  field.Type,
-			Value: configValue.Elem().FieldByName(field.Name),
+	if configType.Kind() == reflect.Struct {
+		for i := 0; i < configType.NumField(); i++ {
+			field := configType.Field(i)
+			configField := configurationField{
+				Name:  field.Name,
+				Tag:   field.Tag,
+				Type:  field.Type,
+				Value: configValue.Elem().FieldByName(field.Name),
+			}
+			configFields = append(configFields, configField)
 		}
-		configFields = append(configFields, configField)
+	} else {
+		configFields = append(configFields, configurationField{
+			Name:  "_",
+			Tag:   "",
+			Type:  configType,
+			Value: configValue.Elem(),
+		})
 	}
 	return configuration{
 		Value:  configValue,

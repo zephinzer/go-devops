@@ -7,12 +7,11 @@ This repository exports a package `devops` that simplifies writing of Go applica
 - [Design principles](#design-principles)
 - [Usage and Examples](#usage-and-examples)
   - [Commands](#commands)
-    - [Listing a directory contents](#listing-a-directory-contents)
-    - [Pulling `go` dependencies](#pulling-go-dependencies)
-    - [Pulling `node` dependencies](#pulling-node-dependencies)
+    - [Running a command](#running-a-command)
   - [Input data](#input-data)
     - [Download files](#download-files)
-    - [Load environment](#load-environment)
+    - [Load configuration](#load-configuration)
+      - [Notes on loading configuration](#notes-on-loading-configuration)
   - [Input validation](#input-validation)
     - [Validating applications](#validating-applications)
     - [Validating connections](#validating-connections)
@@ -47,7 +46,7 @@ import "gitlab.com/zephinzer/go-devops"
 
 ## Commands
 
-### Listing a directory contents
+### Running a command
 
 > A working example is available at [`./cmd/command`](./cmd/command)
 
@@ -63,9 +62,7 @@ func main() {
 }
 ```
 
-### Pulling `go` dependencies
-
-The following runs `go mod vendor`:
+The following runs `go mod vendor` and pulls in dependencies for a Go project:
 
 ```go
 func main() {
@@ -77,9 +74,7 @@ func main() {
 }
 ```
 
-### Pulling `node` dependencies
-
-The following runs `npm install`:
+The following runs `npm install` and pulls in dependencies for a Node project:
 
 ```go
 func main() {
@@ -95,7 +90,9 @@ func main() {
 
 ### Download files
 
-The following downloads the source code from Google:
+> A working example is available at [`./cmd/download`](./cmd/download)
+
+The `.DownloadFile` method downloads the source code from Google into a specified `DestinationPath`:
 
 ```go
 func main() {
@@ -112,54 +109,45 @@ func main() {
 }
 ```
 
-### Load environment
+### Load configuration
 
-The `.LoadEnvironment` method allows you to load typed environment variables:
+> A working example is available at [`./cmd/configuration`](./cmd/configuration)
+
+The `.LoadConfiguration` method allows you to load from environment variables using your own `struct` definition:
 
 ```go
+type configuration struct {
+  // CustomEnvString will be read using os.Getenv("USE_THIS_INSTEAD")
+  CustomEnvString     string `env:"USE_THIS_INSTEAD"`
+  // RequiredStringSlice will be read using os.Getenv("REQUIRED_STRING_SLICE")
+	RequiredStringSlice []string  `default:"a,b,c" delimiter:","`
+	RequiredString      string    `default:"hello world"`
+	RequiredInt         int       `default:"1"`
+	RequiredBool        bool      `default:"true"`
+	OptionalString      *string   `default:"hola mundo"`
+	OptionalStringSlice *[]string `default:"d,e,f" delimiter:","`
+	OptionalInt         *int      `default:"2"`
+  OptionalBool        *bool     `default:"true"`
+}
+
 func main() {
-  env, err := devops.LoadEnvironment(devops.LoadEnvironmentOpts{
-		{
-			Key:     "SOME_BOOLEAN_KEY",
-			Type:    devops.TypeBool,
-			Default: true,
-		},
-		{
-			Key:     "SOME_FLOAT_KEY",
-			Type:    devops.TypeFloat,
-			Default: 3.142,
-		},
-		{
-			Key:     "SOME_INTEGER_KEY",
-			Type:    devops.TypeInt,
-			Default: -123456,
-		},
-		{
-			Key:     "SOME_DEFAULT_KEY",
-			Default: "hola mundo",
-		},
-		{
-			Key:     "SOME_STRING_KEY",
-			Type:    devops.TypeString,
-			Default: "hello world",
-		},
-		{
-			Key:     "SOME_UNSIGNED_INTEGER_KEY",
-			Type:    devops.TypeUint,
-			Default: 123456,
-		},
-  })
-  if err != nil {
-    panic(err)
-  }
-  fmt.Printf("SOME_BOOLEAN_KEY: %v\n", env.GetBool("SOME_BOOLEAN_KEY"))
-	fmt.Printf("SOME_FLOAT_KEY: %v\n", env.GetFloat("SOME_FLOAT_KEY"))
-	fmt.Printf("SOME_DEFAULT_KEY: %v\n", env.Get("SOME_DEFAULT_KEY"))
-	fmt.Printf("SOME_INTEGER_KEY: %v\n", env.GetInt("SOME_INTEGER_KEY"))
-	fmt.Printf("SOME_STRING_KEY: %v\n", env.GetString("SOME_STRING_KEY"))
-	fmt.Printf("SOME_UNSIGNED_INTEGER_KEY: %v\n", env.GetUint("SOME_UNSIGNED_INTEGER_KEY"))
+	c := configuration{}
+	if err := devops.LoadConfiguration(&c); err != nil {
+		log.Println(err)
+		os.Exit(err.(devops.LoadConfigurationError).Code)
+	}
 }
 ```
+
+#### Notes on loading configuration
+
+1. Property names are automagically converted to `UPPER_SNAKE_CASE` and these are used to load values from the environment using `os.Getenv`
+2. To define a custom environment key for the property, use the `env:"READ_FROM_THIS_INSTEAD"` struct tag
+3. To define a default value for the property, use the `default:"default value"` struct tag
+4. To indiciate a configuration property is **REQUIRED**, specify the type as a `value` type. If the environment does not contain the environment key, an error is returned
+5. To indiciate a configuration property is **OPTIONAL**, specify the type as a `*pointer` type. If the environment does not contain the environment key, the value is set to `nil`
+6. When defining a slice of strings, use the `delimiter:","` struct tag to define the character sequence used to indicate boundaries between sequential strings
+7. The returned `error` can be type-asserted into a `LoadConfigurationError` structure which provides both a `Code` and a `Message` you can use for exiting the controller
 
 ## Input validation
 
@@ -301,19 +289,20 @@ func main() {
 
 # Changelog
 
-| Version   | Changes                                               |
-| --------- | ----------------------------------------------------- |
-| `v0.0.13` | Formatting fixes  |
-| `v0.0.12` | Added `.LoadEnvironment`  |
-| `v0.0.11` | Renamed module for being able to import it via its Gitlab URL  |
-| `v0.0.10` | Added `.ValidateConnection`                           |
-| `v0.0.9`  | Added `.ValidateApplications`                         |
-| `v0.0.8`  | Added `.DownloadFile`                                 |
-| `v0.0.7`  | Added custom error parsing for `.ValidateEnvironment` |
-| `v0.0.6`  | Added `.ValidateEnvironment`                          |
-| `v0.0.5`  | Added `.Confirm`                                      |
-| `v0.0.4`  | Added inline code comments for documentation          |
-| `v0.0.3`  | Added `.GetSshKeyFingerprint`. Also started changelog |
+| Version   | Changes                                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------------------------- |
+| `v0.1.0`  | **Removed `.LoadEnvironment`** and added `.LoadConfiguration` which is a better and cleaner way of doing things |
+| `v0.0.13` | Formatting fixes                                                                                                |
+| `v0.0.12` | Added `.LoadEnvironment`                                                                                        |
+| `v0.0.11` | Renamed module for being able to import it via its Gitlab URL                                                   |
+| `v0.0.10` | Added `.ValidateConnection`                                                                                     |
+| `v0.0.9`  | Added `.ValidateApplications`                                                                                   |
+| `v0.0.8`  | Added `.DownloadFile`                                                                                           |
+| `v0.0.7`  | Added custom error parsing for `.ValidateEnvironment`                                                           |
+| `v0.0.6`  | Added `.ValidateEnvironment`                                                                                    |
+| `v0.0.5`  | Added `.Confirm`                                                                                                |
+| `v0.0.4`  | Added inline code comments for documentation                                                                    |
+| `v0.0.3`  | Added `.GetSshKeyFingerprint`. Also started changelog                                                           |
 
 # License
 

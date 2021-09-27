@@ -28,7 +28,8 @@ func LoadConfiguration(config interface{}) error {
 	c := newConfiguration(config)
 	if !c.IsPointer() {
 		return LoadConfigurationError{ErrorLoadConfigurationPrereqs, "failed to receive a valid pointer"}
-	} else if !c.IsStruct() {
+	}
+	if !c.IsStruct() {
 		return LoadConfigurationError{ErrorLoadConfigurationPrereqs, "failed to receive a valid struct"}
 	}
 
