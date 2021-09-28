@@ -305,6 +305,7 @@ func main() {
 
 | Version   | Changes                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `v0.2.1`  | Fixed issues coming from `gosec`                                                                                                        |
 | `v0.2.0`  | Updated `error` return of `.LoadConfiguration` to return `LoadConfigurationErrors` instead so that all errors can be made known at once |
 | `v0.1.0`  | **Removed `.LoadEnvironment`** and added `.LoadConfiguration` which is a better and cleaner way of doing things                         |
 | `v0.0.13` | Formatting fixes                                                                                                                        |
