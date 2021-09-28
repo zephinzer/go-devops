@@ -30,7 +30,7 @@ func newConfiguration(from interface{}) configuration {
 			Name:  "_",
 			Tag:   "",
 			Type:  configType,
-			Value: configValue.Elem(),
+			Value: configValue,
 		})
 	}
 	return configuration{

@@ -27,17 +27,43 @@ func (s LoadConfigurationTest) AfterTest(string, string) {
 	os.Unsetenv("TEST_ENV_INVALID")
 }
 
+func (s LoadConfigurationTest) TestLoadConfigurationErrors() {
+	errs := LoadConfigurationErrors{
+		{1, "expected message 1"},
+		{2, "expected message 2"},
+		{4, "expected message 3"},
+	}
+	s.Equal(1|2|4, errs.GetCode())
+	messages := []string{errs.GetMessage(), errs.Error()}
+	for _, message := range messages {
+		s.Contains(message, "expected message 1")
+		s.Contains(message, "expected message 2")
+		s.Contains(message, "expected message 3")
+	}
+}
+
+func (s LoadConfigurationTest) TestLoadConfigurationError() {
+	err := LoadConfigurationError{1, "expected message"}
+	message := err.Error()
+	s.Contains(message, "1")
+	s.Contains(message, "expected message")
+}
+
 func (s LoadConfigurationTest) TestLoadConfiguration_validation() {
 	type testStruct struct{}
 	err := LoadConfiguration(testStruct{})
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationPrereqs, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationPrereqs, err.(LoadConfigurationErrors).GetCode())
 	s.Contains(err.Error(), "valid pointer")
 
 	var testString string
 	err = LoadConfiguration(&testString)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationPrereqs, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationPrereqs, err.(LoadConfigurationErrors).GetCode())
+	s.Contains(err.Error(), "valid struct")
+	err = LoadConfiguration(testString)
+	s.NotNil(err)
+	s.Equal(ErrorLoadConfigurationPrereqs, err.(LoadConfigurationErrors).GetCode())
 	s.Contains(err.Error(), "valid struct")
 
 	type testInvalidTypeStruct struct {
@@ -45,9 +71,33 @@ func (s LoadConfigurationTest) TestLoadConfiguration_validation() {
 	}
 	err = LoadConfiguration(&testInvalidTypeStruct{})
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidType, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidType, err.(LoadConfigurationErrors).GetCode())
 	s.Contains(err.Error(), "failed to load")
 	s.Contains(err.Error(), "type 'float32'")
+}
+
+func (s LoadConfigurationTest) TestLoadConfiguration_multipleErrors() {
+	type testStruct struct {
+		Bool   bool
+		Int    int `default:"not an int"`
+		String string
+		Float  float32
+	}
+	err := LoadConfiguration(&testStruct{})
+	s.NotNil(err)
+	detailedError, ok := err.(LoadConfigurationErrors)
+	s.True(ok)
+	code := detailedError.GetCode()
+	s.Equal(ErrorLoadConfigurationNotFound, code&ErrorLoadConfigurationNotFound)
+	s.Equal(ErrorLoadConfigurationInvalidValue, code&ErrorLoadConfigurationInvalidValue)
+	s.Equal(ErrorLoadConfigurationInvalidType, code&ErrorLoadConfigurationInvalidType)
+	messages := []string{detailedError.GetMessage(), detailedError.Error()}
+	for _, message := range messages {
+		s.Contains(message, `via "${BOOL}" (bool)`)
+		s.Contains(message, `parse 'not an int' as an int`)
+		s.Contains(message, `via "${STRING}" (string)`)
+		s.Contains(message, "of type 'float32'")
+	}
 }
 
 func (s LoadConfigurationTest) TestLoadConfiguration_Bool() {
@@ -74,7 +124,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Bool_notFoundError() {
 	instance := testStruct{}
 	err := LoadConfiguration(&instance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationErrors).GetCode())
 }
 
 func (s LoadConfigurationTest) TestLoadConfiguration_Bool_parseError() {
@@ -84,7 +134,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Bool_parseError() {
 	instance := testStruct{}
 	err := LoadConfiguration(&instance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 	type testStructPointer struct {
 		Error *bool `default:"nope"`
@@ -92,7 +142,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Bool_parseError() {
 	pointerInstance := testStructPointer{}
 	err = LoadConfiguration(&pointerInstance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 	type testStructInvalidEnv struct {
 		Error bool `env:"TEST_ENV_INVALID"`
@@ -100,7 +150,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Bool_parseError() {
 	invalidEnvInstance := testStructInvalidEnv{}
 	err = LoadConfiguration(&invalidEnvInstance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 	type testStructPointerInvalidEnv struct {
 		Error *bool `env:"TEST_ENV_INVALID"`
@@ -108,7 +158,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Bool_parseError() {
 	invalidEnvPointerInstance := testStructPointerInvalidEnv{}
 	err = LoadConfiguration(&invalidEnvPointerInstance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 }
 
@@ -136,7 +186,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Int_notFoundError() {
 	instance := testStruct{}
 	err := LoadConfiguration(&instance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationErrors).GetCode())
 }
 
 func (s LoadConfigurationTest) TestLoadConfiguration_Int_parseError() {
@@ -146,7 +196,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Int_parseError() {
 	instance := testStruct{}
 	err := LoadConfiguration(&instance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 	type testStructPointer struct {
 		Error *int `default:"nope"`
@@ -154,7 +204,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Int_parseError() {
 	pointerInstance := testStructPointer{}
 	err = LoadConfiguration(&pointerInstance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 	type testStructInvalidEnv struct {
 		Error int `env:"TEST_ENV_INVALID"`
@@ -162,7 +212,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Int_parseError() {
 	invalidEnvInstance := testStructInvalidEnv{}
 	err = LoadConfiguration(&invalidEnvInstance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 
 	type testStructPointerInvalidEnv struct {
 		Error *int `env:"TEST_ENV_INVALID"`
@@ -170,7 +220,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_Int_parseError() {
 	invalidEnvPointerInstance := testStructPointerInvalidEnv{}
 	err = LoadConfiguration(&invalidEnvPointerInstance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationInvalidValue, err.(LoadConfigurationErrors).GetCode())
 }
 
 func (s LoadConfigurationTest) TestLoadConfiguration_String() {
@@ -199,7 +249,7 @@ func (s LoadConfigurationTest) TestLoadConfiguration_String_notFoundError() {
 	instance := testStruct{}
 	err := LoadConfiguration(&instance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationErrors).GetCode())
 }
 
 func (s LoadConfigurationTest) TestLoadConfiguration_StringSlice() {
@@ -230,5 +280,5 @@ func (s LoadConfigurationTest) TestLoadConfiguration_StringSlice_notFoundError()
 	instance := testStruct{}
 	err := LoadConfiguration(&instance)
 	s.NotNil(err)
-	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationError).Code)
+	s.Equal(ErrorLoadConfigurationNotFound, err.(LoadConfigurationErrors).GetCode())
 }
