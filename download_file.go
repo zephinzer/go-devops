@@ -55,7 +55,7 @@ func (o DownloadFileOpts) Validate() error {
 	return nil
 }
 
-func DownloadFile(opts DownloadFileOpts) error {
+func DownloadFile(opts DownloadFileOpts) (err error) {
 	opts.SetDefaults()
 	if err := opts.Validate(); err != nil {
 		return fmt.Errorf("failed to download file: %s", err)
@@ -97,11 +97,21 @@ func DownloadFile(opts DownloadFileOpts) error {
 	}
 	defer res.Body.Close()
 
+	/* #nosec - this is required to write the file */
 	fileHandle, err := os.OpenFile(fileDestination, os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to open file at '%s': %s", fileDestination, err)
 	}
-	defer fileHandle.Close()
+	defer func() {
+		if e := fileHandle.Close(); e != nil {
+			closeError := fmt.Errorf("failed to close file at '%s': %s", fileDestination, e)
+			if err != nil {
+				err = fmt.Errorf("%s (previous error: %s)", closeError.Error(), err.Error())
+			} else {
+				err = closeError
+			}
+		}
+	}()
 	_, err = io.Copy(fileHandle, res.Body)
 	if err != nil {
 		return fmt.Errorf("failed to write to file at '%s': %s", fileDestination, err)

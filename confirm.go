@@ -92,14 +92,18 @@ func Confirm(opts ConfirmOpts) (bool, error) {
 		return false, fmt.Errorf("failed to trigger confirmation: %s", err)
 	}
 	if opts.Question != "" {
-		opts.Output.Write([]byte(opts.Question))
+		if _, err := opts.Output.Write([]byte(opts.Question)); err != nil {
+			return false, fmt.Errorf("failed to write to output: %s", err)
+		}
 	}
 	isUsingRegexp := opts.MatchRegexp != nil
 	acceptedText := opts.MatchExact
 	if isUsingRegexp {
 		acceptedText = opts.MatchRegexp.String()
 	}
-	opts.Output.Write([]byte(fmt.Sprintf(opts.InputHint, acceptedText)))
+	if _, err := opts.Output.Write([]byte(fmt.Sprintf(opts.InputHint, acceptedText))); err != nil {
+		return false, fmt.Errorf("failed to write to output: %s", err)
+	}
 	scanner := bufio.NewScanner(opts.Input)
 	if scanner.Scan() {
 		input := strings.Trim(scanner.Text(), " \n\t\r")

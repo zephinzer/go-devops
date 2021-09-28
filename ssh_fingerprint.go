@@ -86,6 +86,7 @@ func GetSshKeyFingerprint(opts GetSshKeyFingerprintOpts) (SshKeyFingerprint, err
 		return nil, fmt.Errorf("failed to get ssh fingerprint: %s", err)
 	}
 	keyPath := opts.Path
+	/* #nosec - this is needed to read the file */
 	keyContent, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file at '%s': %s", keyPath, err)

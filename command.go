@@ -333,8 +333,14 @@ func (c *command) Run() error {
 		for {
 			<-time.After(200 * time.Millisecond)
 			if c.Cmd.ProcessState.ExitCode() > 0 {
-				c.stdout.(*io.PipeReader).Close()
-				c.stderr.(*io.PipeReader).Close()
+				if err := c.stdout.(*io.PipeReader).Close(); err != nil {
+					// TODO: is there a cleaner way of returning this error to the controller?
+					fmt.Printf("failed to close stdout: %s", err)
+				}
+				if err := c.stderr.(*io.PipeReader).Close(); err != nil {
+					// TODO: is there a cleaner way of returning this error to the controller?
+					fmt.Printf("failed to close stderr: %s", err)
+				}
 				return
 			}
 		}
@@ -355,7 +361,11 @@ func (c *command) hook(from io.Reader, onto InputHooks, writer io.WriteCloser) {
 		}
 		for _, inputHook := range c.stdanyHooks {
 			if bytes.Contains(incoming, inputHook.On) {
-				writer.Write(inputHook.Send)
+				if _, err := writer.Write(inputHook.Send); err != nil {
+					// TODO: is there a cleaner way of returning this error to the controller?
+					fmt.Printf("failed to write message to stdin: %s", err)
+					continue
+				}
 			}
 		}
 		if onto == nil || len(onto) == 0 {
@@ -363,7 +373,10 @@ func (c *command) hook(from io.Reader, onto InputHooks, writer io.WriteCloser) {
 		}
 		for _, inputHook := range onto {
 			if bytes.Contains(incoming, inputHook.On) {
-				writer.Write(inputHook.Send)
+				if _, err := writer.Write(inputHook.Send); err != nil {
+					// TODO: is there a cleaner way of returning this error to the controller?
+					fmt.Printf("failed to write message to stdin: %s", err)
+				}
 			}
 		}
 	}

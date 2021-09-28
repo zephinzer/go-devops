@@ -61,6 +61,11 @@ type configurationField struct {
 	Value reflect.Value
 }
 
+func (c configurationField) getPointer() unsafe.Pointer {
+	/* #nosec - this is required to assign values to an untyped struct */
+	return unsafe.Pointer(c.Value.UnsafeAddr())
+}
+
 func (c configurationField) GetDefaultValue() *string {
 	if v, ok := c.Tag.Lookup("default"); ok {
 		return &v
@@ -80,7 +85,7 @@ func (c configurationField) SetBool(value bool) {
 }
 
 func (c configurationField) SetBoolPointer(value bool) {
-	reflect.NewAt(c.Value.Type(), unsafe.Pointer(c.Value.UnsafeAddr())).Elem().Set(reflect.ValueOf(&value))
+	reflect.NewAt(c.Value.Type(), c.getPointer()).Elem().Set(reflect.ValueOf(&value))
 }
 
 func (c configurationField) SetInt(value int) {
@@ -88,7 +93,7 @@ func (c configurationField) SetInt(value int) {
 }
 
 func (c configurationField) SetIntPointer(value int) {
-	reflect.NewAt(c.Value.Type(), unsafe.Pointer(c.Value.UnsafeAddr())).Elem().Set(reflect.ValueOf(&value))
+	reflect.NewAt(c.Value.Type(), c.getPointer()).Elem().Set(reflect.ValueOf(&value))
 }
 
 func (c configurationField) SetString(value string) {
@@ -96,13 +101,13 @@ func (c configurationField) SetString(value string) {
 }
 
 func (c configurationField) SetStringPointer(value string) {
-	reflect.NewAt(c.Value.Type(), unsafe.Pointer(c.Value.UnsafeAddr())).Elem().Set(reflect.ValueOf(&value))
+	reflect.NewAt(c.Value.Type(), c.getPointer()).Elem().Set(reflect.ValueOf(&value))
 }
 
 func (c configurationField) SetStringSlice(value []string) {
-	reflect.NewAt(c.Value.Type(), unsafe.Pointer(c.Value.UnsafeAddr())).Elem().Set(reflect.ValueOf(value))
+	reflect.NewAt(c.Value.Type(), c.getPointer()).Elem().Set(reflect.ValueOf(value))
 }
 
 func (c configurationField) SetStringSlicePointer(value []string) {
-	reflect.NewAt(c.Value.Type(), unsafe.Pointer(c.Value.UnsafeAddr())).Elem().Set(reflect.ValueOf(&value))
+	reflect.NewAt(c.Value.Type(), c.getPointer()).Elem().Set(reflect.ValueOf(&value))
 }
