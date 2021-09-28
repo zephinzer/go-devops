@@ -133,8 +133,22 @@ type configuration struct {
 func main() {
 	c := configuration{}
 	if err := devops.LoadConfiguration(&c); err != nil {
-		log.Println(err)
-		os.Exit(err.(devops.LoadConfigurationError).Code)
+    // use it like an error
+    log.Println(err)
+
+    // consolidated errors
+    errs := err.(devops.LoadConfigurationErrors)
+    log.Printf("error code   : %v", errs.GetCode())
+    log.Printf("error message: %s", errs.GetMessage())
+
+    // individual errors
+    log.Println("errors follow")
+    for _, errInstance := range err.(devops.LoadConfigurationErrors) {
+      log.Printf("code   : %v", errInstance.Code)
+      log.Printf("message: %s", errInstance.Message)
+    }
+
+		os.Exit(errs.GetCode())
 	}
 }
 ```
@@ -147,7 +161,7 @@ func main() {
 4. To indiciate a configuration property is **REQUIRED**, specify the type as a `value` type. If the environment does not contain the environment key, an error is returned
 5. To indiciate a configuration property is **OPTIONAL**, specify the type as a `*pointer` type. If the environment does not contain the environment key, the value is set to `nil`
 6. When defining a slice of strings, use the `delimiter:","` struct tag to define the character sequence used to indicate boundaries between sequential strings
-7. The returned `error` can be type-asserted into a `LoadConfigurationError` structure which provides both a `Code` and a `Message` you can use for exiting the controller
+7. The returned `error` can be type-asserted into a `LoadConfigurationErrors` structure which provides both a `GetCode()` and a `GetMessage()` method you can use for assessing errors, you could `range` through it to get individual errors or just call `.Error()` to get a collated error message
 
 ## Input validation
 
@@ -289,20 +303,21 @@ func main() {
 
 # Changelog
 
-| Version   | Changes                                                                                                         |
-| --------- | --------------------------------------------------------------------------------------------------------------- |
-| `v0.1.0`  | **Removed `.LoadEnvironment`** and added `.LoadConfiguration` which is a better and cleaner way of doing things |
-| `v0.0.13` | Formatting fixes                                                                                                |
-| `v0.0.12` | Added `.LoadEnvironment`                                                                                        |
-| `v0.0.11` | Renamed module for being able to import it via its Gitlab URL                                                   |
-| `v0.0.10` | Added `.ValidateConnection`                                                                                     |
-| `v0.0.9`  | Added `.ValidateApplications`                                                                                   |
-| `v0.0.8`  | Added `.DownloadFile`                                                                                           |
-| `v0.0.7`  | Added custom error parsing for `.ValidateEnvironment`                                                           |
-| `v0.0.6`  | Added `.ValidateEnvironment`                                                                                    |
-| `v0.0.5`  | Added `.Confirm`                                                                                                |
-| `v0.0.4`  | Added inline code comments for documentation                                                                    |
-| `v0.0.3`  | Added `.GetSshKeyFingerprint`. Also started changelog                                                           |
+| Version   | Changes                                                                                                                                 |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `v0.2.0`  | Updated `error` return of `.LoadConfiguration` to return `LoadConfigurationErrors` instead so that all errors can be made known at once |
+| `v0.1.0`  | **Removed `.LoadEnvironment`** and added `.LoadConfiguration` which is a better and cleaner way of doing things                         |
+| `v0.0.13` | Formatting fixes                                                                                                                        |
+| `v0.0.12` | Added `.LoadEnvironment`                                                                                                                |
+| `v0.0.11` | Renamed module for being able to import it via its Gitlab URL                                                                           |
+| `v0.0.10` | Added `.ValidateConnection`                                                                                                             |
+| `v0.0.9`  | Added `.ValidateApplications`                                                                                                           |
+| `v0.0.8`  | Added `.DownloadFile`                                                                                                                   |
+| `v0.0.7`  | Added custom error parsing for `.ValidateEnvironment`                                                                                   |
+| `v0.0.6`  | Added `.ValidateEnvironment`                                                                                                            |
+| `v0.0.5`  | Added `.Confirm`                                                                                                                        |
+| `v0.0.4`  | Added inline code comments for documentation                                                                                            |
+| `v0.0.3`  | Added `.GetSshKeyFingerprint`. Also started changelog                                                                                   |
 
 # License
 
