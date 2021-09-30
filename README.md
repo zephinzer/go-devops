@@ -17,6 +17,7 @@ This repository exports a package `devops` that simplifies writing of Go applica
     - [Validating connections](#validating-connections)
     - [Validating the environment](#validating-the-environment)
   - [Security](#security)
+    - [Generating an SSH keypair](#generating-an-ssh-keypair)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
   - [User interactions](#user-interactions)
     - [Confirmation dialog](#confirmation-dialog)
@@ -258,6 +259,25 @@ func main() {
 
 ## Security
 
+### Generating an SSH keypair
+
+To generate an SSH keypair, you can use the `.NewSSHKeypair` function.
+
+```go
+func main() {
+  keypair, err := NewSSHKeypair(NewSSHKeypairOpts{
+    Bytes: 4096,
+  })
+  if err != nil {
+    panic(err)
+  }
+  // this prints the keys, you can write it to a file instead
+  fmt.Printf("private key: %s\n", string(keypair.Private))
+  fmt.Printf("public key : %s\n", string(keypair.Public))
+}
+```
+
+
 ### Retrieving the SSH key fingerprint
 
 ```go
@@ -305,6 +325,7 @@ func main() {
 
 | Version   | Changes                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `v0.2.2`  | Added `.NewSSHKeypair`                                                                                                 |
 | `v0.2.1`  | Fixed issues coming from `gosec`                                                                                                        |
 | `v0.2.0`  | Updated `error` return of `.LoadConfiguration` to return `LoadConfigurationErrors` instead so that all errors can be made known at once |
 | `v0.1.0`  | **Removed `.LoadEnvironment`** and added `.LoadConfiguration` which is a better and cleaner way of doing things                         |
