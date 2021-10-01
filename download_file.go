@@ -10,18 +10,10 @@ import (
 	"strings"
 )
 
-type DownloadStatusUpdate struct {
-	Completed bool
-	Progress  float32
-}
-
-type BasicAuthOpts struct {
-	Username string
-	Password string
-}
-
+// DownloadFileOpts presents configuration for the
+// DownloadFile method
 type DownloadFileOpts struct {
-	BasicAuth       *BasicAuthOpts
+	BasicAuth       *BasicAuth
 	Client          *http.Client
 	Headers         map[string][]string
 	DestinationPath string
@@ -29,12 +21,15 @@ type DownloadFileOpts struct {
 	URL             *url.URL
 }
 
+// SetDefaults sets defaults for this object instance
 func (o *DownloadFileOpts) SetDefaults() {
 	if o.Client == nil {
 		o.Client = &http.Client{}
 	}
 }
 
+// Validate verifies that this object instance is usable
+// by the DownloadFile method
 func (o DownloadFileOpts) Validate() error {
 	errors := []string{}
 
@@ -55,6 +50,8 @@ func (o DownloadFileOpts) Validate() error {
 	return nil
 }
 
+// DownloadFile downloads a file as directed by the configuration set
+// in the options object `opts`
 func DownloadFile(opts DownloadFileOpts) (err error) {
 	opts.SetDefaults()
 	if err := opts.Validate(); err != nil {
@@ -81,19 +78,14 @@ func DownloadFile(opts DownloadFileOpts) (err error) {
 		}
 	}
 
-	if opts.BasicAuth != nil {
-		opts.URL.User = url.UserPassword(opts.BasicAuth.Username, opts.BasicAuth.Password)
-	}
-	req := http.Request{
-		Method: http.MethodGet,
-		URL:    opts.URL,
-	}
-	if opts.Headers != nil {
-		req.Header = opts.Headers
-	}
-	res, err := opts.Client.Do(&req)
+	res, err := SendHTTPRequest(SendHTTPRequestOpts{
+		BasicAuth: opts.BasicAuth,
+		Headers:   opts.Headers,
+		Method:    http.MethodGet,
+		URL:       opts.URL,
+	})
 	if err != nil {
-		return fmt.Errorf("failed to start download from '%s': %s", opts.URL.String(), err)
+		return fmt.Errorf("failed to make request: %s", err)
 	}
 	defer res.Body.Close()
 

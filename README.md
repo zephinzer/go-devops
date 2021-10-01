@@ -10,6 +10,7 @@ This repository exports a package `devops` that simplifies writing of Go applica
     - [Running a command](#running-a-command)
   - [Input data](#input-data)
     - [Download files](#download-files)
+    - [Get data from a HTTP endpoint](#get-data-from-a-http-endpoint)
     - [Load configuration](#load-configuration)
       - [Notes on loading configuration](#notes-on-loading-configuration)
   - [Input validation](#input-validation)
@@ -109,6 +110,31 @@ func main() {
   }
 }
 ```
+
+### Get data from a HTTP endpoint
+
+> A working example is available at [`./cmd/curl`](./cmd/curl)
+
+The `.SendHTTPRequest` method can be used in place of `cURL` to make a HTTP request:
+
+```go
+func main() {
+	targetURL, err := url.Parse("https://httpbin.org/uuid")
+	if err != nil {
+		panic(err)
+	}
+	response, err := devops.SendHTTPRequest(devops.SendHTTPRequestOpts{
+		URL: targetURL,
+	})
+	responseBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("uuid: %s", string(responseBody))
+}
+```
+
+`.SendHTTPRequest` supports all common `curl` flags via the `SendHTTPRequestOpts` object.
 
 ### Load configuration
 
@@ -325,6 +351,7 @@ func main() {
 
 | Version   | Changes                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `v0.2.3`  | Added `.SendHTTPRequest`, improved inline documentation                                                                                                 |
 | `v0.2.2`  | Added `.NewSSHKeypair`                                                                                                 |
 | `v0.2.1`  | Fixed issues coming from `gosec`                                                                                                        |
 | `v0.2.0`  | Updated `error` return of `.LoadConfiguration` to return `LoadConfigurationErrors` instead so that all errors can be made known at once |

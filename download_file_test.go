@@ -62,7 +62,7 @@ func (s DownloadFileTests) TestDownloadFile() {
 	s.Nil(err)
 
 	options := DownloadFileOpts{
-		BasicAuth: &BasicAuthOpts{
+		BasicAuth: &BasicAuth{
 			Username: s.Username,
 			Password: s.Password,
 		},

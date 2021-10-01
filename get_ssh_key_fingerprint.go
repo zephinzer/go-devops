@@ -8,17 +8,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// SshKeyFingerprint holds the key's fingerprint
-type SshKeyFingerprint interface {
-	// GetSHA256 returns a SHA256 fingerprint as a string
-	// that looks like 'SHA256:aBcDeF ...'
-	GetSHA256() string
-
-	// GetMD5 returns a MD5 fingerprint (legacy) as a string
-	// that looks like 'aa:bb:cc:dd ...'
-	GetMD5() string
-}
-
 type sshKeyFingerprint struct {
 	sha256 string
 	md5    string
@@ -54,12 +43,15 @@ type GetSshKeyFingerprintOpts struct {
 	Path string
 }
 
+// SetDefaults sets defaults for this object instance
 func (o *GetSshKeyFingerprintOpts) SetDefaults() {
 	if !o.IsPrivateKey && !o.IsPublicKey {
 		o.IsPublicKey = true
 	}
 }
 
+// Validate checks if this object instance has sufficient parameters
+// to be used by GetSshKeyFingerprint
 func (o GetSshKeyFingerprintOpts) Validate() error {
 	errors := []string{}
 
