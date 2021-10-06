@@ -1,7 +1,15 @@
 package devops
 
+// BasicAuth provides credentials for basic access authentication
+//
+// Reference link: https://en.wikipedia.org/wiki/Basic_access_authentication
 type BasicAuth struct {
+	// Username represents the username section of
+	// the credential
 	Username string
+
+	// Password represents the password section of
+	// the credential
 	Password string
 }
 

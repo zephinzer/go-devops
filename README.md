@@ -17,6 +17,8 @@ This repository exports a package `devops` that simplifies writing of Go applica
     - [Validating applications](#validating-applications)
     - [Validating connections](#validating-connections)
     - [Validating the environment](#validating-the-environment)
+    - [Validating project type](#validating-project-type)
+      - [Implementation notes for project type validation](#implementation-notes-for-project-type-validation)
   - [Security](#security)
     - [Generating an SSH keypair](#generating-an-ssh-keypair)
     - [Retrieving the SSH key fingerprint](#retrieving-the-ssh-key-fingerprint)
@@ -283,6 +285,26 @@ func main() {
 }
 ```
 
+### Validating project type
+
+The `.IsProjectType` method allows you to test if a provided directory contains a project of the specified type.
+
+A full example follows which tests for a Go project:
+
+```go
+func main() {
+  yes, err := devops.IsProjectType("./path/to/dir", devops.TypeGo)
+  if err != nil {
+    panic(err)
+  }
+  fmt.Printf("directory contains a go project: %v", yes)
+}
+```
+
+#### Implementation notes for project type validation
+
+- Determination of project type is by detecting the presence of signature files commonly present in projects of that type
+
 ## Security
 
 ### Generating an SSH keypair
@@ -351,8 +373,8 @@ func main() {
 
 | Version   | Changes                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `v0.2.3`  | Added `.SendHTTPRequest`, improved inline documentation                                                                                                 |
-| `v0.2.2`  | Added `.NewSSHKeypair`                                                                                                 |
+| `v0.2.3`  | Added `.SendHTTPRequest`, improved inline documentation                                                                                 |
+| `v0.2.2`  | Added `.NewSSHKeypair`                                                                                                                  |
 | `v0.2.1`  | Fixed issues coming from `gosec`                                                                                                        |
 | `v0.2.0`  | Updated `error` return of `.LoadConfiguration` to return `LoadConfigurationErrors` instead so that all errors can be made known at once |
 | `v0.1.0`  | **Removed `.LoadEnvironment`** and added `.LoadConfiguration` which is a better and cleaner way of doing things                         |
