@@ -373,6 +373,7 @@ func main() {
 
 | Version   | Changes                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `v0.2.5`  | Fixed issue with `NewCommand` that prevented it from dumping the derived path when `exec.LookupPath` failed                             |
 | `v0.2.4`  | Added `.IsProjectType`                                                                                                                  |
 | `v0.2.3`  | Added `.SendHTTPRequest`, improved inline documentation                                                                                 |
 | `v0.2.2`  | Added `.NewSSHKeypair`                                                                                                                  |

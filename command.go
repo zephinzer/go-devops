@@ -137,18 +137,8 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 
 	invocation, err := exec.LookPath(opts.Command)
 	if err != nil {
-		if !path.IsAbs(invocation) {
-			invocation = path.Join(currentDirectory, invocation)
-			invocationInfo, err := os.Lstat(invocation)
-			if err != nil {
-				if errors.Is(err, os.ErrNotExist) {
-					return nil, fmt.Errorf("failed to find a file system listing at %s", invocation)
-				}
-				return nil, fmt.Errorf("failed to access file at %s", invocation)
-			}
-			if invocationInfo.IsDir() {
-				return nil, fmt.Errorf("failed to find a file at %s", invocation)
-			}
+		if errors.Is(err, exec.ErrNotFound) {
+			return nil, fmt.Errorf("failed to find binary '%s' in $PATH: %s", opts.Command, err)
 		}
 		return nil, fmt.Errorf("failed to find binary '%s' in $PATH: %s", opts.Command, err)
 	}

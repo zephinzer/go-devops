@@ -213,6 +213,14 @@ func (s CommandTests) Test_command_String() {
 	s.Contains(command.String(), scriptPath+" \""+strings.Join(arguments, "\" \"")+"\"")
 }
 
+func (s CommandTests) Test_NewCommand_pathNotFound() {
+	command, err := NewCommand(NewCommandOpts{
+		Command: "thisbinarydoesnotexist",
+	})
+	s.NotNil(err)
+	s.Nil(command)
+}
+
 func (s CommandTests) Test_NewCommandOpts_Validate() {
 	opts := NewCommandOpts{}
 	err := opts.Validate()
