@@ -219,6 +219,14 @@ func (s CommandTests) Test_NewCommand_pathNotFound() {
 	})
 	s.NotNil(err)
 	s.Nil(command)
+	currentPath := os.Getenv("PATH")
+	command, err = NewCommand(NewCommandOpts{
+		Command: "thisbinarydoesnotexist",
+		Environment: map[string]string{
+			"PATH": currentPath + ":./tests/command",
+		},
+	})
+	s.Nil(err)
 }
 
 func (s CommandTests) Test_NewCommandOpts_Validate() {

@@ -128,6 +128,7 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to create Command: %s", err)
 	}
+
 	currentDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get working directory: %s", err)
@@ -135,6 +136,26 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 
 	cmd := exec.Cmd{}
 
+	// this provisions a temporary environment for exec.LookPath
+	// to find things in the path accurately depending on the
+	// Environment property of the options object
+	originalEnvironment := map[string]string{}
+	for key, value := range opts.Environment {
+		if originalValue, exists := os.LookupEnv(key); exists {
+			originalEnvironment[key] = originalValue
+		}
+		os.Setenv(key, value)
+	}
+	defer func() {
+		for key, _ := range opts.Environment {
+			os.Unsetenv(key)
+		}
+		for key, value := range originalEnvironment {
+			os.Setenv(key, value)
+		}
+	}()
+
+	// do the lookup and set the exec.Cmd's Path property
 	invocation, err := exec.LookPath(opts.Command)
 	if err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
@@ -149,10 +170,13 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	}
 	cmd.Path = invocation
 
+	// add in the arguments
 	arguments := []string{opts.Command}
 	arguments = append(arguments, opts.Arguments...)
 	cmd.Args = arguments
 
+	// resolve the working directory the command should be
+	// called from
 	var workingDir string
 	if opts.WorkingDir != "" {
 		workingDir = opts.WorkingDir
@@ -171,6 +195,7 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 	}
 	cmd.Dir = workingDir
 
+	// set the execution environment
 	environment := []string{}
 	for key, value := range opts.Environment {
 		environment = append(environment, fmt.Sprintf("%s=%s", key, value))

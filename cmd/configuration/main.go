@@ -36,7 +36,7 @@ func main() {
 		log.Printf("OptionalInt:    '%v' (value)", *c.OptionalInt)
 	}
 	log.Printf("RequiredString: '%s'", c.RequiredString)
-	log.Printf("OptionalString: '%s' (ptr)", c.OptionalString)
+	log.Printf("OptionalString: '%v' (ptr)", c.OptionalString)
 	if c.OptionalString != nil {
 		log.Printf("OptionalString: '%s' (value)", *c.OptionalString)
 	}
