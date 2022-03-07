@@ -73,7 +73,7 @@ func (s IsProjectTypeTest) Test_Javascript() {
 	yes, err = IsProjectType(testPath, TypeC)
 	s.Nil(err)
 	s.False(yes)
-	testPath = path.Join(s.TestDirectory, "jsdir")
+	testPath = path.Join(s.TestDirectory, "js")
 	yes, err = IsProjectType(testPath, TypeJavascript)
 	s.Nil(err)
 	s.True(yes)

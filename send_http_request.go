@@ -82,13 +82,14 @@ func SendHTTPRequest(opts SendHTTPRequestOpts) (*http.Response, error) {
 	if opts.BasicAuth != nil {
 		opts.URL.User = url.UserPassword(opts.BasicAuth.Username, opts.BasicAuth.Password)
 	}
-	req := &http.Request{
-		Method: opts.Method,
-		URL:    opts.URL,
-	}
+	var body io.Reader
+	var req *http.Request
 	if opts.Body != nil {
-		requestBody := bytes.NewReader(opts.Body)
-		req.Body = io.NopCloser(requestBody)
+		body = bytes.NewReader(opts.Body)
+	}
+	req, err := http.NewRequest(opts.Method, opts.URL.String(), body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request object: %s", err)
 	}
 	if opts.Headers != nil {
 		req.Header = opts.Headers
