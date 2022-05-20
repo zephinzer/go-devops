@@ -197,12 +197,12 @@ func NewCommand(opts NewCommandOpts) (Command, error) {
 
 	// set the execution environment
 	environment := []string{}
-	for key, value := range opts.Environment {
-		environment = append(environment, fmt.Sprintf("%s=%s", key, value))
-	}
 	if opts.Flag.UseGlobalEnvironment {
 		globalEnvironment := os.Environ()
 		environment = append(environment, globalEnvironment...)
+	}
+	for key, value := range opts.Environment {
+		environment = append(environment, fmt.Sprintf("%s=%s", key, value))
 	}
 	cmd.Env = environment
 
